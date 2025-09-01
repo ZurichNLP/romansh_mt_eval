@@ -1,0 +1,1 @@
+Run `python -m scripts.export_data_to_wmt_codebase` to create the data in this directory.

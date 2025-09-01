@@ -1,0 +1,16 @@
+git+https://github.com/wmt-conference/wmt-format-tools.git
+#ipdb
+tqdm
+# deepl
+# cohere
+openai
+absl-py
+# together
+retrying
+# anthropic
+# mistralai
+diskcache
+# yandex_translate
+#google-generativeai
+# google-cloud-translate
+litellm

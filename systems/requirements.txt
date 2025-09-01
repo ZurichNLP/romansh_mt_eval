@@ -1,0 +1,7 @@
+requests
+datasets
+bs4
+transformers
+accelerate
+sentencepiece
+spacy
