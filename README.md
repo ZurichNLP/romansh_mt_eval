@@ -1,6 +1,6 @@
 # Machine Translation Evaluation for Romansh
 
-Code for the paper "Expanding the WMT24++ Benchmark with Rumantsch Grischun, Sursilvan, Sutsilvan, Surmiran, Puter, and Vallader"
+Code for the paper ["Expanding the WMT24++ Benchmark with Rumantsch Grischun, Sursilvan, Sutsilvan, Surmiran, Puter, and Vallader"](https://arxiv.org/abs/2509.03148)
 
 The benchmark data are located at https://huggingface.co/datasets/ZurichNLP/wmt24pp-rm – this repo contains the code to reproduce the experiments in the paper.
 
@@ -86,8 +86,11 @@ The submitted Excel files are in `creation_workflow/completed_xlsx/`
 ```bibtex
 @inproceedings{vamvas-et-al-2025-expanding,
   title        = {Expanding the {WMT}24++ Benchmark with {R}umantsch {G}rischun, {S}ursilvan, {S}utsilvan, {S}urmiran, {P}uter, and {V}allader},
-  author       = {Vamvas, Jannis and Pérez Prat, Ignacio and Soliva, Not Battesta and Baltermia-Guetg, Sandra and Beeli, Andrina and Beeli, Simona and Capeder, Madlaina and Decurtins, Laura and Gregori, Gian Peder and Hobi, Flavia and Holderegger, Gabriela and Lazzarini, Arina and Lazzarini, Viviana and Rosselli, Walter and Vital, Bettina and Rutkiewicz, Anna and Sennrich, Rico},
-  year         = {2025},
-  note         = {Forthcoming}
+  author       = {Vamvas, Jannis and P\'{e}rez Prat, Ignacio and Soliva, Not Battesta and Baltermia-Guetg, Sandra and Beeli, Andrina and Beeli, Simona and Capeder, Madlaina and Decurtins, Laura and Gregori, Gian Peder and Hobi, Flavia and Holderegger, Gabriela and Lazzarini, Arina and Lazzarini, Viviana and Rosselli, Walter and Vital, Bettina and Rutkiewicz, Anna and Sennrich, Rico},
+  year={2025},
+  eprint={2509.03148},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2509.03148},
 }
 ```
