@@ -2,7 +2,7 @@
 VARIETIES = {
     "rm-rumgr": "Rumantsch Grischun",
     "rm-sursilv": "Sursilvan",
-    # "rm-sutsilv": "Sutsilvan",  # Incomplete subset
+    "rm-sutsilv": "Sutsilvan",
     "rm-surmiran": "Surmiran",
     "rm-puter": "Puter",
     "rm-vallader": "Vallader",
