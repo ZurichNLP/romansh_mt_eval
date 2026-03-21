@@ -1,5 +1,7 @@
 datasets
+numpy
 openpyxl==3.1.5
-XlsxWriter==3.2.2
-sacrebleu==2.5.1
 python-dotenv==1.0.0
+sacrebleu==2.5.1
+scipy
+XlsxWriter==3.2.2

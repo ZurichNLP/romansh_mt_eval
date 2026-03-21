@@ -64,13 +64,41 @@ class RomanshWMT24Evaluation:
     def evaluate(self,
                  system_translations: SystemTranslations,
                  metric: Literal["bleu", "chrf", "xcomet-xl"],
+                 document_ids_filter: set[str] | None = None,
+                 segment_indices_filter: set[int] | None = None,
                  ) -> SystemResult:
         assert system_translations.variety in VARIETIES.keys(), f"Variety {system_translations.variety} not recognized."
         assert len(system_translations.translations_rm_to_de) == len(system_translations.translations_de_to_rm)
+        
+        base_dataset = self.dataset[system_translations.variety]["test"]
+        if document_ids_filter is not None:
+            base_dataset = base_dataset.filter(lambda x: x.get("document_id") in document_ids_filter)
+        if segment_indices_filter is not None:
+            indices = sorted(segment_indices_filter)
+            base_dataset = base_dataset.select(indices)
+            system_translations = SystemTranslations(
+                sys_name=system_translations.sys_name,
+                variety=system_translations.variety,
+                translations_rm_to_de=[
+                    system_translations.translations_rm_to_de[i] for i in indices
+                ],
+                translations_de_to_rm=[
+                    system_translations.translations_de_to_rm[i] for i in indices
+                ],
+                skips_bad_sources=system_translations.skips_bad_sources,
+            )
         if system_translations.skips_bad_sources:
-            assert len(system_translations.translations_rm_to_de) == len(self.dataset[system_translations.variety]["test"].filter(lambda x: not x["is_bad_source"]))
+            expected_length = len(base_dataset.filter(lambda x: not x["is_bad_source"]))
         else:
-            assert len(system_translations.translations_rm_to_de) == len(self.dataset[system_translations.variety]["test"])
+            expected_length = len(base_dataset)
+        
+        assert len(system_translations.translations_rm_to_de) == expected_length, (
+            f"Translation length mismatch: expected {expected_length} "
+            f"(variety={system_translations.variety}, "
+            f"skips_bad_sources={system_translations.skips_bad_sources}, "
+            f"document_ids_filter={'set' if document_ids_filter else 'None'}), "
+            f"got {len(system_translations.translations_rm_to_de)}"
+        )
 
         # Postprocess the system translations (remove newlines, normalize quotes)
         system_translations.translations_rm_to_de = [self.postprocess(t) for t in system_translations.translations_rm_to_de]
@@ -86,6 +114,8 @@ class RomanshWMT24Evaluation:
             raise ValueError(f"Metric {metric} not recognized. Choose from 'bleu', 'chrf', 'xcomet-xl'.")
 
         dataset = copy.deepcopy(self.dataset[system_translations.variety])
+        dataset["test"] = base_dataset
+
         # Add the system translations as a new column to the dataset
         if system_translations.skips_bad_sources:
             # First filter out bad sources, then add columns

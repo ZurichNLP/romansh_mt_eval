@@ -11,32 +11,34 @@ The benchmark data are located at https://huggingface.co/datasets/ZurichNLP/wmt2
 
 ### Table 2 – Language classifier confusion matrix
 - Download the language classifier (900MB size) from https://drive.switch.ch/index.php/s/5WM7aL2Nlo2wNDq
-- `python -m scripts.language_classifier_confusion_matrix /path/to/model.bin`
+- `python -m scripts.benchmark_paper.language_classifier_confusion_matrix /path/to/model.bin`
 
 ### Table 3 – Cross-variety ChrF
-`python -m scripts.cross_variety_scores`
+`python -m scripts.benchmark_paper.cross_variety_scores`
 
 ### Table 4 – RM→DE: ChrF/xCOMET
 We queried xCOMET-XL via a custom API – adapt the code to run the metric locally if needed.
 
-`python -m scripts.results_rm_to_de`
+`python -m scripts.benchmark_paper.results_rm_to_de`
 
 ### Table 5 – DE→RM: ChrF
-`python -m scripts.results_de_to_rm`
+`python -m scripts.benchmark_paper.results_de_to_rm`
 
 ### Figure 3 – Target variety adherence
-`python -m scripts.target_variety_adherence`
+`python -m scripts.benchmark_paper.target_variety_adherence`
 
 ### Table 6 – Dataset statistics
-`python -m scripts.dataset_stats`
+`python -m scripts.benchmark_paper.dataset_stats`
 
 ### Tables 7–12 – RM→DE: per-domain ChrF/xCOMET
 We queried xCOMET-XL via a custom API – adapt the code to run the metric locally if needed.
 
-`python -m scripts.results_rm_to_de_detailed`
+`python -m scripts.benchmark_paper.results_rm_to_de_detailed`
 
 ### Tables 13–18 – DE→RM: per-domain ChrF
-`python -m scripts.results_de_to_rm_detailed`
+`python -m scripts.benchmark_paper.results_de_to_rm_detailed`
+
+xCOMET-XL is queried via the existing API client where applicable; run ChrF-only or adapt for local COMET if needed.
 
 ## Collecting system translations
 
@@ -61,8 +63,8 @@ done
 ### Supertext
 Translations were collected manually via the web interface of Supertext.
 
-- Uploaded files are in systems/supertext/uploaded_files/
-- Files returned by the web interface are in systems/supertext/outputs/
+- Uploaded files are in `systems/supertext/uploaded_files/`
+- Files returned by the web interface are in `system_translations/wmt25_oldi/supertext/outputs/`
 
 ### LLMs
 See instructions in `./wmt-collect-translations/README.md`
@@ -79,7 +81,10 @@ The submitted Excel files are in `creation_workflow/completed_xlsx/`
 
 ## Tests
 
-`python -m unittest discover tests`
+```bash
+python -m unittest discover -s romansh_mt_eval/tests
+python -m unittest discover -s romansh_mt_eval/human_evaluation/tests
+```
 
 ## Citation
 

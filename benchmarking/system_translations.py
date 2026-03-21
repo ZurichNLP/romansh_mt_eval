@@ -1,16 +1,19 @@
+from copy import deepcopy
 from pathlib import Path
 
 import pandas as pd
 from datasets import load_dataset
-from spacy.tokens.span_group import deepcopy
 import jsonlines
 
 from romansh_mt_eval.benchmarking.evaluation import SystemTranslations
 from romansh_mt_eval.benchmarking.constants import VARIETIES
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_SYSTEM_TRANSLATIONS_WMT25_OLDI = _REPO_ROOT / "system_translations" / "wmt25_oldi"
+
 
 def load_madlad_translations_direct() -> dict[str, SystemTranslations]:
-    translations_dir = Path(__file__).parent.parent / "systems" / "madlad" / "translations"
+    translations_dir = _SYSTEM_TRANSLATIONS_WMT25_OLDI / "madlad" / "translations"
     assert translations_dir.exists()
     translations = {}
     # RM->DE
@@ -34,7 +37,7 @@ def load_madlad_translations_direct() -> dict[str, SystemTranslations]:
 
 
 def load_madlad_translations_pivot() -> dict[str, SystemTranslations]:
-    translations_dir = Path(__file__).parent.parent / "systems" / "madlad" / "translations"
+    translations_dir = _SYSTEM_TRANSLATIONS_WMT25_OLDI / "madlad" / "translations"
     assert translations_dir.exists()
     translations = {}
     # RM->DE
@@ -53,12 +56,12 @@ def load_madlad_translations_pivot() -> dict[str, SystemTranslations]:
     with jsonlines.open(rumgr_path) as f:
         rumgr_translations = [line["target"] for line in f]
     for variety in VARIETIES:
-            translations[variety].translations_de_to_rm = deepcopy(rumgr_translations)
+        translations[variety].translations_de_to_rm = deepcopy(rumgr_translations)
     return translations
 
 
 def load_translaturia_translations() -> dict[str, SystemTranslations]:
-    filepath = Path(__file__).parent.parent / "systems" / "translaturia" / "translations" / "de_DE-rm-rumgr.jsonl"
+    filepath = _SYSTEM_TRANSLATIONS_WMT25_OLDI / "translaturia" / "translations" / "de_DE-rm-rumgr.jsonl"
     assert filepath.exists()
     dataset = load_dataset("json", data_files={"test": str(filepath)})["test"]
     translations = {
@@ -100,7 +103,7 @@ def _extract_non_empty_cells(excel_path):
 
 
 def load_supertext_translations() -> dict[str, SystemTranslations]:
-    translations_dir = Path(__file__).parent.parent / "systems" / "supertext" / "outputs"
+    translations_dir = _SYSTEM_TRANSLATIONS_WMT25_OLDI / "supertext" / "outputs"
     assert translations_dir.exists()
     translations = {}
     
@@ -122,19 +125,92 @@ def load_supertext_translations() -> dict[str, SystemTranslations]:
         translations[variety].translations_de_to_rm = deepcopy(rumgr_translations)
     return translations
 
-def load_llm_translations(system_name: str) -> dict[str, SystemTranslations]:
+def load_llm_translations(
+    system_name: str,
+    rm_to_de: bool = True,
+    de_to_rm: bool = True,
+    document_ids_filter: set[str] | None = None
+) -> dict[str, SystemTranslations]:
     """
     Translations were collected via WMT codebase (./wmt-collect-translations)
+    
+    Args:
+        system_name: Name of the system to load translations for
+        rm_to_de: Whether to load RM->DE translations
+        de_to_rm: Whether to load DE->RM translations
+        document_ids_filter: Optional set of document IDs to filter by. If provided,
+            only translations for documents with these IDs will be included.
     """
-    translations_dir = Path(__file__).parent.parent / "systems" / system_name
-    assert translations_dir.exists()
+    # Handle paths relative to repo root (e.g. system_translations/mt_paper/second_half/...)
+    if "/" in system_name or "\\" in system_name:
+        translations_dir = _REPO_ROOT / system_name
+    else:
+        translations_dir = _SYSTEM_TRANSLATIONS_WMT25_OLDI / system_name
+    assert translations_dir.exists(), f"Translations directory not found: {translations_dir}"
     translations = {}
+    
     for variety in VARIETIES:
-        rm_to_de_path = translations_dir / f"wmttest2024.src.{variety.replace('-', '_')}-de.xml.no-testsuites.{variety}"
-        rm_to_de_translations = rm_to_de_path.read_text().splitlines()
-        de_to_rm_path = translations_dir / f"wmttest2024.src.de-{variety.replace('-', '_')}.xml.no-testsuites.de"
-        de_to_rm_translations = de_to_rm_path.read_text().splitlines()
-        assert len(rm_to_de_translations) == len(de_to_rm_translations)
+        if rm_to_de:
+            rm_to_de_path = translations_dir / f"wmttest2024.src.{variety.replace('-', '_')}-de.xml.no-testsuites.{variety}"
+            if not rm_to_de_path.exists():
+                # Try alternative naming convention
+                rm_to_de_path_alt = translations_dir / f"wmttest2024.src.{variety.replace('-', '_')}-de.xml.no-testsuites.{variety.replace('-', '_')}"
+                if rm_to_de_path_alt.exists():
+                    rm_to_de_path = rm_to_de_path_alt
+            rm_to_de_translations = rm_to_de_path.read_text().splitlines() if rm_to_de_path.exists() else []
+        else:
+            rm_to_de_translations = []
+        if de_to_rm:
+            de_to_rm_path = translations_dir / f"wmttest2024.src.de-{variety.replace('-', '_')}.xml.no-testsuites.de"
+            if not de_to_rm_path.exists():
+                # Try alternative naming convention (ends with variety instead of .de)
+                de_to_rm_path_alt = translations_dir / f"wmttest2024.src.de-{variety.replace('-', '_')}.xml.no-testsuites.{variety}"
+                if de_to_rm_path_alt.exists():
+                    de_to_rm_path = de_to_rm_path_alt
+            de_to_rm_translations = de_to_rm_path.read_text().splitlines() if de_to_rm_path.exists() else []
+        else:
+            de_to_rm_translations = []
+        
+        # Filter translations if document_ids_filter is provided
+        if document_ids_filter is not None:
+            dataset_name = "ZurichNLP/wmt24pp-rm"
+            variety_dataset = load_dataset(dataset_name, f"de_DE-{variety}", split="test")
+            
+            # Create a list of indices that match the filter
+            filtered_indices = [
+                idx for idx, example in enumerate(variety_dataset)
+                if example.get("document_id") in document_ids_filter
+            ]
+            
+            # Check if translations are already filtered (i.e., length matches filtered dataset)
+            # This handles the case where translation files already contain only the filtered subset
+            expected_filtered_length = len(filtered_indices)
+            actual_translation_length = len(rm_to_de_translations) if rm_to_de_translations else len(de_to_rm_translations)
+            
+            if actual_translation_length == expected_filtered_length:
+                # Translations are already filtered, use as-is
+                pass
+            elif actual_translation_length == len(variety_dataset):
+                # Translations match full dataset, need to filter
+                if rm_to_de_translations:
+                    rm_to_de_translations = [rm_to_de_translations[i] for i in filtered_indices]
+                if de_to_rm_translations:
+                    de_to_rm_translations = [de_to_rm_translations[i] for i in filtered_indices]
+            else:
+                raise ValueError(
+                    f"Translation length mismatch for {variety}: "
+                    f"expected {expected_filtered_length} (filtered) or {len(variety_dataset)} (full), "
+                    f"got {actual_translation_length}"
+                )
+        
+        if rm_to_de_translations and de_to_rm_translations:
+            assert len(rm_to_de_translations) == len(de_to_rm_translations)
+        elif not rm_to_de_translations and de_to_rm_translations:
+            rm_to_de_translations = [''] * len(de_to_rm_translations)
+        elif rm_to_de_translations and not de_to_rm_translations:
+            de_to_rm_translations = [''] * len(rm_to_de_translations)
+        else:
+            raise ValueError("Both directions are false or empty.")
         translations[variety] = SystemTranslations(
             sys_name=system_name,
             variety=variety,
