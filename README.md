@@ -1,10 +1,12 @@
 # Machine Translation Evaluation for Romansh
 
-Code for the paper ["Expanding the WMT24++ Benchmark with Rumantsch Grischun, Sursilvan, Sutsilvan, Surmiran, Puter, and Vallader"](https://aclanthology.org/2025.wmt-1.79/)
+Code for the papers
+- ["Expanding the WMT24++ Benchmark with Rumantsch Grischun, Sursilvan, Sutsilvan, Surmiran, Puter, and Vallader"](https://aclanthology.org/2025.wmt-1.79/)
+- "Translation Asymmetry in LLMs as a Data Augmentation Factor: A Case Study for 6 Romansh Language Varieties"
 
-The benchmark data are located at https://huggingface.co/datasets/ZurichNLP/wmt24pp-rm – this repo contains the code to reproduce the experiments in the paper.
+The benchmark data are located at https://huggingface.co/datasets/ZurichNLP/wmt24pp-rm and the human quality ratings are located at https://huggingface.co/datasets/ZurichNLP/romansh-mt-evaluation – this repo contains the code to reproduce the experiments in the papers.
 
-## Reproducing the results in the paper
+## Reproducing the results in "Expanding the WMT24++ Benchmark with Rumantsch Grischun, Sursilvan, Sutsilvan, Surmiran, Puter, and Vallader"
 
 ### Installation
 - `pip install -r requirements.txt`
@@ -40,6 +42,51 @@ We queried xCOMET-XL via a custom API – adapt the code to run the metric local
 
 xCOMET-XL is queried via the existing API client where applicable; run ChrF-only or adapt for local COMET if needed.
 
+## Reproducing the results in "Translation Asymmetry in LLMs as a Data Augmentation Factor: A Case Study for 6 Romansh Language Varieties"
+
+### Installation
+- `pip install -r requirements.txt`
+
+### Splitting WMT24++ into validation and test sets
+- `python -m scripts.mt_paper.split_wmt24pp_dataset`
+- This creates `benchmarking/wmt24pp_split.json`
+- The first half of documents per domain is used as the validation split, and the remaining half is used as the test split
+
+### Table 1 – Automatic evaluation results
+We queried xCOMET-XL via a custom API - adapt the code to run the metric locally if needed.
+
+`python -m scripts.mt_paper.results_automatic`
+
+### Table 2 – Human evaluation results
+`python human_evaluation/scripts/create_results_table.py`
+
+### Figure 2b – Target variety adherence
+`python -m scripts.mt_paper.target_variety_adherence_dual`
+
+### Table 4 – Validation results for back-translation from Romansh
+We queried xCOMET-XL via a custom API - adapt the code to run the metric locally if needed.
+
+`python -m scripts.mt_paper.results_validation_backtranslation`
+
+### Appendix L – Detailed automatic evaluation results
+We queried xCOMET-XL via a custom API - adapt the code to run the metric locally if needed.
+
+`python -m scripts.mt_paper.results_detailed_automatic`
+
+`python -m scripts.mt_paper.target_variety_adherence_all_systems`
+
+### Appendix M – Detailed human evaluation results
+
+`python human_evaluation/scripts/create_detailed_results_table.py`
+
+`python human_evaluation/scripts/pairwise_system_comparison.py`
+
+### Appendix N – Human evaluation statistics
+
+`python human_evaluation/scripts/create_human_evaluation_statistics_table.py`
+
+`python human_evaluation/scripts/create_extended_inter_annotator_agreement.py`
+
 ## Collecting system translations
 
 The collected system translations are stored in `systems/`.
@@ -69,7 +116,7 @@ Translations were collected manually via the web interface of Supertext.
 ### LLMs
 See instructions in `./wmt-collect-translations/README.md`
 
-## Reproducing the data creation workflow
+## Reproducing the benchmark data creation workflow
 
 ### Creating the blank Excel files given to the translators
 `python -m creation_workflow.create_worksheets`
