@@ -28,12 +28,12 @@ SYSTEM_ORDER = [
     "romansh-nllb-1.3b-dict-prompting",
 ]
 
-# System name mappings: data name -> LaTeX display name
+# System name mappings: data name -> LaTeX display name (each wrapped in \mbox{...} in the table)
 SYSTEM_LATEX_NAMES = {
     "reference": "Human reference",
     "Gemini-3-Pro": "Gemini 3 Pro (preview)",
-    "romansh-nllb-1.3b": "LR$\\rightarrow$HR augmentation",
-    "romansh-nllb-1.3b-dict-prompting": "+ dictionary prompting",
+    "romansh-nllb-1.3b": r"LR$\rightarrow$HR augmented NLLB",
+    "romansh-nllb-1.3b-dict-prompting": r"\quad + dict prompting",
 }
 
 

@@ -27,7 +27,7 @@ ACCURACY_TEMPLATE = r"""
 Human reference & {reference_RG} & {reference_Surs} & {reference_Suts} & {reference_Surm} & {reference_Puter} & {reference_Vall} \\
 \midrule
 Gemini 3 Pro (preview) & {gemini_3_pro_RG} & {gemini_3_pro_Surs} & {gemini_3_pro_Suts} & {gemini_3_pro_Surm} & {gemini_3_pro_Puter} & {gemini_3_pro_Vall} \\
-\mbox{LR$\rightarrow$HR NLLB} & {back_translation_RG} & {back_translation_Surs} & {back_translation_Suts} & {back_translation_Surm} & {back_translation_Puter} & {back_translation_Vall} \\
+\mbox{LR$\rightarrow$HR augmented NLLB} & {back_translation_RG} & {back_translation_Surs} & {back_translation_Suts} & {back_translation_Surm} & {back_translation_Puter} & {back_translation_Vall} \\
 \quad + dict prompting & {dict_prompting_RG} & {dict_prompting_Surs} & {dict_prompting_Suts} & {dict_prompting_Surm} & {dict_prompting_Puter} & {dict_prompting_Vall} \\
 \bottomrule
 \end{tabularx}
@@ -43,7 +43,7 @@ FLUENCY_TEMPLATE = r"""
 Human reference & {reference_RG} & {reference_Surs} & {reference_Suts} & {reference_Surm} & {reference_Puter} & {reference_Vall} \\
 \midrule
 Gemini 3 Pro (preview) & {gemini_3_pro_RG} & {gemini_3_pro_Surs} & {gemini_3_pro_Suts} & {gemini_3_pro_Surm} & {gemini_3_pro_Puter} & {gemini_3_pro_Vall} \\
-\mbox{LR$\rightarrow$HR NLLB} & {back_translation_RG} & {back_translation_Surs} & {back_translation_Suts} & {back_translation_Surm} & {back_translation_Puter} & {back_translation_Vall} \\
+\mbox{LR$\rightarrow$HR augmented NLLB} & {back_translation_RG} & {back_translation_Surs} & {back_translation_Suts} & {back_translation_Surm} & {back_translation_Puter} & {back_translation_Vall} \\
 \quad + dict prompting & {dict_prompting_RG} & {dict_prompting_Surs} & {dict_prompting_Suts} & {dict_prompting_Surm} & {dict_prompting_Puter} & {dict_prompting_Vall} \\
 \bottomrule
 \end{tabularx} 

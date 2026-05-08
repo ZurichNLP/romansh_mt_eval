@@ -27,9 +27,8 @@ Human reference & {reference_fluency_sqm} & {reference_accuracy_sqm} \\
 \midrule
 \mbox{Gemini 3 Pro (preview)} & {gemini_3_pro_fluency_sqm} & {gemini_3_pro_accuracy_sqm} \\
 \midrule
-\mbox{\textit{Fine-tuned NLLB}} & & \\[0.2em]
-\mbox{LR$\rightarrow$HR augmentation} & {back_translation_fluency_sqm} & {back_translation_accuracy_sqm} \\
-\mbox{\quad + dictionary prompting} & {dict_prompting_fluency_sqm} & {dict_prompting_accuracy_sqm} \\
+\mbox{LR$\rightarrow$HR augmented NLLB} & {back_translation_fluency_sqm} & {back_translation_accuracy_sqm} \\
+\mbox{\quad + dict prompting} & {dict_prompting_fluency_sqm} & {dict_prompting_accuracy_sqm} \\
 \bottomrule
 \end{tabularx}
 \normalsize

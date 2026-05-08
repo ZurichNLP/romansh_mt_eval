@@ -26,17 +26,24 @@ SYSTEM_MAPPINGS = {
     "gemini_3_flash": ("system_translations/mt_paper/second_half/Gemini-3-Flash", r"\mbox{Gemini 3 Flash}"),
     "gemini_3_pro": ("system_translations/mt_paper/second_half/Gemini-3-Pro", r"\mbox{Gemini 3 Pro}"),
     "no_data_aug": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2", r"\mbox{No data augmentation}"),
-    "forward_translation": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2", r"\mbox{High-to-Low synthetization}"),
-    "back_translation": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2", r"\mbox{Low-to-High synthetization}"),
-    "dict_prompting": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2", r"\mbox{Low-to-High synthetization with dictionary prompting}"),
+    "forward_translation_europarl": (
+        "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
+        r"\mbox{HR$\rightarrow$LR augmentation with Europarl data}",
+    ),
+    "forward_translation_newscrawl_fineweb2": (
+        "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
+        r"\mbox{HR$\rightarrow$LR augmentation with Newscrawl / FineWeb2 data}",
+    ),
+    "back_translation": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2", r"\mbox{LR$\rightarrow$HR augmentation}"),
+    "dict_prompting": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2", r"\mbox{LR$\rightarrow$HR augmentation with dictionary prompting}"),
 }
 
 # System order for grid layout (2 columns)
 SYSTEM_ORDER = [
     ["gemini_25_flash", "gemini_3_flash"],
     ["gemini_3_pro", "no_data_aug"],
-    ["forward_translation", "back_translation"],
-    ["dict_prompting", None],  # None means empty spot
+    ["forward_translation_europarl", "forward_translation_newscrawl_fineweb2"],
+    ["back_translation", "dict_prompting"],
 ]
 
 benchmark = RomanshWMT24Evaluation()
