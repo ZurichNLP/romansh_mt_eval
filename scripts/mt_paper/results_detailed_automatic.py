@@ -24,15 +24,25 @@ WMT_VARIETY_ORDER = [
     "rm-vallader",
 ]
 
-SYSTEMS: list[tuple[str, str]] = [
+SYSTEMS_GEMINI: list[tuple[str, str]] = [
     ("gemini_25_flash", r"\mbox{Gemini 2.5 Flash}"),
     ("gemini_3_flash", r"\mbox{Gemini 3 Flash (preview)}"),
     ("gemini_3_pro", r"\mbox{Gemini 3 Pro (preview)}"),
-    ("no_data_aug", r"\mbox{No data augmentation}"),
-    ("forward_translation", r"\mbox{HR$\rightarrow$LR augmentation}"),
+]
+
+FORWARD_TRANSLATION_HEADER = r"\mbox{HR$\rightarrow$LR augmentation}"
+
+FORWARD_TRANSLATION_ROWS: list[tuple[str, str]] = [
+    ("forward_translation_europarl", r"\mbox{– Europarl data}"),
+    ("forward_translation_newscrawl_fineweb2", r"\mbox{– Newscrawl / FineWeb2}"),
+]
+
+NLLB_SYSTEMS_TAIL: list[tuple[str, str]] = [
     ("back_translation", r"\mbox{LR$\rightarrow$HR augmentation}"),
     ("dict_prompting", r"\mbox{+ dictionary prompting}"),
 ]
+
+NO_DATA_AUG_SYSTEM: tuple[str, str] = ("no_data_aug", r"\mbox{No data augmentation}")
 
 BOUQUET_REPO_ID = "facebook/bouquet"
 BOUQUET_ROMANSH_CONFIG = "roh_Latn"
@@ -46,7 +56,8 @@ WMT_SYSTEM_MAPPINGS: dict[str, str] = {
     "gemini_3_flash": "system_translations/mt_paper/second_half/Gemini-3-Flash",
     "gemini_3_pro": "system_translations/mt_paper/second_half/Gemini-3-Pro",
     "no_data_aug": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2",
-    "forward_translation": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
+    "forward_translation_europarl": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
+    "forward_translation_newscrawl_fineweb2": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
     "back_translation": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2",
     "dict_prompting": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2",
 }
@@ -56,7 +67,8 @@ BOUQUET_SYSTEM_MAPPINGS: dict[str, str | None] = {
     "gemini_3_flash": "systems_bouquet/gemini-3-flash-preview",
     "gemini_3_pro": "systems_bouquet/gemini-3-pro-preview",
     "no_data_aug": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2",
-    "forward_translation": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
+    "forward_translation_europarl": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
+    "forward_translation_newscrawl_fineweb2": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
     "back_translation": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2",
     "dict_prompting": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2",
 }
@@ -400,6 +412,52 @@ def format_rm_to_de_cell(bleu: float | str | None, comet: float | str | None) ->
     return f"{format_score(bleu)} / {format_score(comet)}"
 
 
+def de_to_rm_data_row_line(
+    display_name: str,
+    system_key: str,
+    wmt_scores: dict[str, dict[str, dict[str, float | None]]],
+    bouquet_scores: dict[str, dict[str, float | str]],
+    line_suffix: str,
+) -> str:
+    cells = [
+        format_de_to_rm_cell(
+            wmt_scores[system_key]["de_to_rm_bleu"][variety],
+            wmt_scores[system_key]["rm_to_de_comet"][variety],
+        )
+        for variety in WMT_VARIETY_ORDER
+    ]
+    cells.append(
+        format_de_to_rm_cell(
+            bouquet_scores[system_key]["de_to_rm_bleu"],
+            bouquet_scores[system_key]["rm_to_de_comet"],
+        )
+    )
+    return display_name + " & " + " & ".join(cells) + line_suffix
+
+
+def rm_to_de_data_row_line(
+    display_name: str,
+    system_key: str,
+    wmt_scores: dict[str, dict[str, dict[str, float | None]]],
+    bouquet_scores: dict[str, dict[str, float | str]],
+    line_suffix: str,
+) -> str:
+    cells = [
+        format_rm_to_de_cell(
+            wmt_scores[system_key]["rm_to_de_bleu"][variety],
+            wmt_scores[system_key]["rm_to_de_comet"][variety],
+        )
+        for variety in WMT_VARIETY_ORDER
+    ]
+    cells.append(
+        format_rm_to_de_cell(
+            bouquet_scores[system_key]["rm_to_de_bleu"],
+            bouquet_scores[system_key]["rm_to_de_comet"],
+        )
+    )
+    return display_name + " & " + " & ".join(cells) + line_suffix
+
+
 def build_de_to_rm_table(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
@@ -415,43 +473,61 @@ def build_de_to_rm_table(
         r"\midrule",
     ]
 
-    for system_key, display_name in SYSTEMS[:3]:
-        cells = [
-            format_de_to_rm_cell(
-                wmt_scores[system_key]["de_to_rm_bleu"][variety],
-                wmt_scores[system_key]["rm_to_de_comet"][variety],
-            )
-            for variety in WMT_VARIETY_ORDER
-        ]
-        cells.append(
-            format_de_to_rm_cell(
-                bouquet_scores[system_key]["de_to_rm_bleu"],
-                bouquet_scores[system_key]["rm_to_de_comet"],
+    for system_key, display_name in SYSTEMS_GEMINI:
+        lines.append(
+            de_to_rm_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                r" \\",
             )
         )
-        lines.append(display_name + " & " + " & ".join(cells) + r" \\")
 
     lines.extend([
         r"\midrule",
         r"\mbox{\textit{Fine-tuned NLLB}} & & & & & & & \\[0.2em]",
     ])
 
-    for index, (system_key, display_name) in enumerate(SYSTEMS[3:]):
-        cells = [
-            format_de_to_rm_cell(
-                wmt_scores[system_key]["de_to_rm_bleu"][variety],
-                wmt_scores[system_key]["rm_to_de_comet"][variety],
-            )
-            for variety in WMT_VARIETY_ORDER
-        ]
-        cells.append(
-            format_de_to_rm_cell(
-                bouquet_scores[system_key]["de_to_rm_bleu"],
-                bouquet_scores[system_key]["rm_to_de_comet"],
+    no_data_key, no_data_display = NO_DATA_AUG_SYSTEM
+    lines.append(
+        de_to_rm_data_row_line(
+            no_data_display,
+            no_data_key,
+            wmt_scores,
+            bouquet_scores,
+            r" \\[0.2em]",
+        )
+    )
+
+    lines.append(FORWARD_TRANSLATION_HEADER + r" & & & & & & & \\")
+
+    for forward_index, (system_key, display_name) in enumerate(FORWARD_TRANSLATION_ROWS):
+        forward_suffix = (
+            r" \\[0.2em]"
+            if forward_index == len(FORWARD_TRANSLATION_ROWS) - 1
+            else r" \\"
+        )
+        lines.append(
+            de_to_rm_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                forward_suffix,
             )
         )
-        suffix = r" \\[0.2em]" if index < 2 else r" \\"
-        lines.append(display_name + " & " + " & ".join(cells) + suffix)
+
+    for system_key, display_name in NLLB_SYSTEMS_TAIL:
+        lines.append(
+            de_to_rm_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                r" \\",
+            )
+        )
 
     lines.extend([
         r"\bottomrule",
@@ -475,43 +551,61 @@ def build_rm_to_de_table(
         r"\midrule",
     ]
 
-    for system_key, display_name in SYSTEMS[:3]:
-        cells = [
-            format_rm_to_de_cell(
-                wmt_scores[system_key]["rm_to_de_bleu"][variety],
-                wmt_scores[system_key]["rm_to_de_comet"][variety],
-            )
-            for variety in WMT_VARIETY_ORDER
-        ]
-        cells.append(
-            format_rm_to_de_cell(
-                bouquet_scores[system_key]["rm_to_de_bleu"],
-                bouquet_scores[system_key]["rm_to_de_comet"],
+    for system_key, display_name in SYSTEMS_GEMINI:
+        lines.append(
+            rm_to_de_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                r" \\",
             )
         )
-        lines.append(display_name + " & " + " & ".join(cells) + r" \\")
 
     lines.extend([
         r"\midrule",
         r"\mbox{\textit{Fine-tuned NLLB}} & & & & & & & \\[0.2em]",
     ])
 
-    for index, (system_key, display_name) in enumerate(SYSTEMS[3:]):
-        cells = [
-            format_rm_to_de_cell(
-                wmt_scores[system_key]["rm_to_de_bleu"][variety],
-                wmt_scores[system_key]["rm_to_de_comet"][variety],
-            )
-            for variety in WMT_VARIETY_ORDER
-        ]
-        cells.append(
-            format_rm_to_de_cell(
-                bouquet_scores[system_key]["rm_to_de_bleu"],
-                bouquet_scores[system_key]["rm_to_de_comet"],
+    no_data_key, no_data_display = NO_DATA_AUG_SYSTEM
+    lines.append(
+        rm_to_de_data_row_line(
+            no_data_display,
+            no_data_key,
+            wmt_scores,
+            bouquet_scores,
+            r" \\[0.2em]",
+        )
+    )
+
+    lines.append(FORWARD_TRANSLATION_HEADER + r" & & & & & & & \\")
+
+    for forward_index, (system_key, display_name) in enumerate(FORWARD_TRANSLATION_ROWS):
+        forward_suffix = (
+            r" \\[0.2em]"
+            if forward_index == len(FORWARD_TRANSLATION_ROWS) - 1
+            else r" \\"
+        )
+        lines.append(
+            rm_to_de_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                forward_suffix,
             )
         )
-        suffix = r" \\[0.2em]" if index < 2 else r" \\"
-        lines.append(display_name + " & " + " & ".join(cells) + suffix)
+
+    for system_key, display_name in NLLB_SYSTEMS_TAIL:
+        lines.append(
+            rm_to_de_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                r" \\",
+            )
+        )
 
     lines.extend([
         r"\bottomrule",
