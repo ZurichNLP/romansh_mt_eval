@@ -18,6 +18,7 @@ TEMPLATE = r"""\footnotesize
 \midrule
 \mbox{\textit{Baseline LLMs}} & & \\[0.2em]
 \mbox{Llama 3.3 (70B)} & {llama_70b_de_to_rm} & {llama_70b_rm_to_de} \\
+\mbox{Apertus (70B Instruct)} & {apertus_de_to_rm} & {apertus_rm_to_de} \\
 \mbox{GPT-4o} & {gpt_4o_de_to_rm} & {gpt_4o_rm_to_de} \\
 \midrule
 \mbox{\textit{Gemini 2.5 Flash}} & & \\[0.2em]
@@ -150,6 +151,7 @@ def format_rm_to_de_bleu_comet(system_scores: dict[str, float | None]) -> str:
 def main():
     baseline_llm_systems = {
         "llama_70b": "system_translations/mt_paper/first_half/Llama-3.3-70b",
+        "apertus": "system_translations/mt_paper/first_half/Apertus-70B-Instruct-2509",
         "gpt_4o": "system_translations/mt_paper/first_half/GPT-4o",
     }
     gemini_system_mappings = {

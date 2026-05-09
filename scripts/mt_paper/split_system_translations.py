@@ -13,10 +13,14 @@ Reads each system's per-variety files from ``--systems-dir`` (default:
 import argparse
 import json
 from pathlib import Path
+from typing import Literal
 
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 
 from romansh_mt_eval.benchmarking.constants import VARIETIES
+from romansh_mt_eval.benchmarking.evaluation import RomanshWMT24Evaluation
+
+TranslationDirection = Literal["rm_to_de", "de_to_rm"]
 
 
 def load_split_document_ids(split_path: Path) -> tuple[set[str], set[str]]:
@@ -40,56 +44,109 @@ def load_split_document_ids(split_path: Path) -> tuple[set[str], set[str]]:
 
 def get_document_indices_by_variety(
     first_half_ids: set[str],
-    second_half_ids: set[str]
-) -> dict[str, dict[str, list[int]]]:
+    second_half_ids: set[str],
+) -> tuple[dict[str, dict[str, list[int]]], dict[str, Dataset]]:
     """
-    Get indices for first and second half for each variety.
-    
-    Args:
-        first_half_ids: Set of document IDs in first half
-        second_half_ids: Set of document IDs in second half
-        
+    Load each variety's test split once and map document IDs to first/second-half indices.
+
     Returns:
-        Dictionary mapping variety to dict with 'first_half' and 'second_half' lists of indices
+        Tuple of (indices_by_variety, variety_datasets). ``variety_datasets[variety]`` is the
+        ``split="test"`` dataset used for indices and for padding omitted ``is_bad_source`` rows.
     """
     dataset_name = "ZurichNLP/wmt24pp-rm"
-    indices_by_variety = {}
-    
+    indices_by_variety: dict[str, dict[str, list[int]]] = {}
+    variety_datasets: dict[str, Dataset] = {}
+
     for variety in VARIETIES:
         variety_dataset = load_dataset(dataset_name, f"de_DE-{variety}", split="test")
-        
+        variety_datasets[variety] = variety_dataset
+
         first_half_indices = []
         second_half_indices = []
-        
+
         for idx, example in enumerate(variety_dataset):
             document_id = example.get("document_id")
             if document_id in first_half_ids:
                 first_half_indices.append(idx)
             elif document_id in second_half_ids:
                 second_half_indices.append(idx)
-        
+
         indices_by_variety[variety] = {
             "first_half": first_half_indices,
-            "second_half": second_half_indices
+            "second_half": second_half_indices,
         }
-        
+
         print(f"  {variety}: {len(first_half_indices)} first half, {len(second_half_indices)} second half")
-    
-    return indices_by_variety
+
+    return indices_by_variety, variety_datasets
+
+
+def expand_translation_lines_to_full_test(
+    translation_lines: list[str],
+    variety_dataset: Dataset,
+    direction: TranslationDirection,
+    *,
+    source_path: Path | None = None,
+) -> list[str]:
+    """
+    If ``translation_lines`` omits ``is_bad_source`` rows, insert placeholders so length matches
+    the full test split (index-aligned with systems that include every segment).
+
+    RM→DE placeholders use the German ``source`` field; DE→RM placeholders use the Romansh
+    ``target`` field, each passed through ``RomanshWMT24Evaluation.postprocess``.
+    """
+    postprocess = RomanshWMT24Evaluation.postprocess
+    full_length = len(variety_dataset)
+    lines_without_bad_source = full_length - sum(
+        1 for row in variety_dataset if row["is_bad_source"]
+    )
+
+    path_suffix = f" ({source_path})" if source_path is not None else ""
+
+    if len(translation_lines) == full_length:
+        return translation_lines
+    if len(translation_lines) != lines_without_bad_source:
+        raise ValueError(
+            f"Translation line count mismatch{path_suffix}: expected {full_length} "
+            f"(full test set) or {lines_without_bad_source} (without is_bad_source rows), "
+            f"got {len(translation_lines)}."
+        )
+
+    expanded: list[str] = []
+    cursor = 0
+    for row in variety_dataset:
+        if row["is_bad_source"]:
+            raw_placeholder = row["source"] if direction == "rm_to_de" else row["target"]
+            expanded.append(postprocess(raw_placeholder))
+        else:
+            expanded.append(translation_lines[cursor])
+            cursor += 1
+
+    if cursor != len(translation_lines):
+        raise RuntimeError(
+            f"Internal padding error{path_suffix}: used {cursor} non-placeholder lines, "
+            f"file had {len(translation_lines)}."
+        )
+
+    return expanded
 
 
 def split_translation_file(
     input_file: Path,
+    variety_dataset: Dataset,
+    direction: TranslationDirection,
     first_half_indices: list[int],
     second_half_indices: list[int],
     first_half_output: Path,
-    second_half_output: Path
+    second_half_output: Path,
 ) -> None:
     """
     Split a translation file into first and second halves.
-    
+
     Args:
         input_file: Path to input translation file
+        variety_dataset: Test split for this variety (same order as line indices)
+        direction: ``rm_to_de`` or ``de_to_rm`` (used when padding omitted ``is_bad_source`` rows)
         first_half_indices: List of line indices for first half
         second_half_indices: List of line indices for second half
         first_half_output: Path to write first half translations
@@ -98,9 +155,15 @@ def split_translation_file(
     if not input_file.exists():
         print(f"    Warning: File not found: {input_file}, skipping...")
         return
-    
+
     translations = input_file.read_text(encoding="utf-8").splitlines()
-    
+    translations = expand_translation_lines_to_full_test(
+        translations,
+        variety_dataset,
+        direction,
+        source_path=input_file,
+    )
+
     # Extract translations for each half
     first_half_translations = [translations[i] for i in first_half_indices]
     second_half_translations = [translations[i] for i in second_half_indices]
@@ -119,7 +182,10 @@ def split_translation_file(
         if second_half_translations:  # Add newline at end if file is not empty
             f.write("\n")
     
-    print(f"    ✓ Split {len(translations)} translations: {len(first_half_translations)} first, {len(second_half_translations)} second")
+    print(
+        f"    ✓ Split {len(translations)} translations (after padding): "
+        f"{len(first_half_translations)} first, {len(second_half_translations)} second"
+    )
 
 
 def split_system_translations(
@@ -152,7 +218,9 @@ def split_system_translations(
     
     # Get indices for each variety
     print("\nMapping document IDs to dataset indices...")
-    indices_by_variety = get_document_indices_by_variety(first_half_ids, second_half_ids)
+    indices_by_variety, variety_datasets = get_document_indices_by_variety(
+        first_half_ids, second_half_ids
+    )
     
     mt_paper_root = output_base_dir / "system_translations" / "mt_paper"
     first_half_dir = mt_paper_root / "first_half" / system_name
@@ -178,10 +246,12 @@ def split_system_translations(
             print(f"  {variety} (RM->DE):")
             split_translation_file(
                 rm_to_de_input,
+                variety_datasets[variety],
+                "rm_to_de",
                 first_half_indices,
                 second_half_indices,
                 first_half_dir / rm_to_de_filename,
-                second_half_dir / rm_to_de_filename
+                second_half_dir / rm_to_de_filename,
             )
         
         # DE->RM direction
@@ -195,10 +265,12 @@ def split_system_translations(
             print(f"  {variety} (DE->RM):")
             split_translation_file(
                 de_to_rm_input,
+                variety_datasets[variety],
+                "de_to_rm",
                 first_half_indices,
                 second_half_indices,
                 first_half_dir / de_to_rm_filename,
-                second_half_dir / de_to_rm_filename
+                second_half_dir / de_to_rm_filename,
             )
     
     print(f"\n✓ Successfully split translations for {system_name}")
