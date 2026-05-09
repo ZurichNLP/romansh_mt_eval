@@ -43,8 +43,8 @@ FORWARD_TRANSLATION_ROWS: list[tuple[str, str]] = [
 ]
 
 LR_TO_HR_AUGMENTATION_ROWS: list[tuple[str, str]] = [
-    ("back_translation", r"\mbox{– baseline prompt}"),
-    ("dict_prompting", r"\mbox{– dictionary prompting}"),
+    ("back_translation", r"\mbox{– Baseline prompt}"),
+    ("dict_prompting", r"\mbox{– Dictionary prompting}"),
 ]
 
 NO_DATA_AUG_SYSTEM: tuple[str, str] = ("no_data_aug", r"\mbox{No data augmentation}")

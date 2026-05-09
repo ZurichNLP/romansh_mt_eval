@@ -14,11 +14,11 @@ SECOND_HALF_ROOT = WORKSPACE_ROOT / "system_translations" / "mt_paper" / "second
 
 SYSTEM_MAPPINGS = {
     "dict_prompting": (
-        "dictionary prompting",
+        "Dictionary prompting",
         "ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2_idiom_to_idiom",
     ),
     "dict_prompting_v2": (
-        "dictionary prompting (v2)",
+        "Dictionary prompting (v2)",
         "ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.20e.withdict.dict_prompting.v2_ct2_idiom_to_idiom",
     ),
 }

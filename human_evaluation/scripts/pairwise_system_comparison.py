@@ -33,7 +33,7 @@ SYSTEM_LATEX_NAMES = {
     "reference": "Human reference",
     "Gemini-3-Pro": "Gemini 3 Pro (preview)",
     "romansh-nllb-1.3b": r"LR$\rightarrow$HR augmented NLLB",
-    "romansh-nllb-1.3b-dict-prompting": r"\quad + dict prompting",
+    "romansh-nllb-1.3b-dict-prompting": r"\quad + Dictionary prompting",
 }
 
 

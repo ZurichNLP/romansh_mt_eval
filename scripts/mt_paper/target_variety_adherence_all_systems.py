@@ -28,14 +28,14 @@ SYSTEM_MAPPINGS = {
     "no_data_aug": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2", r"\mbox{No data augmentation}"),
     "forward_translation_europarl": (
         "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
-        r"\mbox{HR$\rightarrow$LR augmentation with Europarl data}",
+        r"\mbox{– Europarl data}",
     ),
     "forward_translation_newscrawl_fineweb2": (
         "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
-        r"\mbox{HR$\rightarrow$LR augmentation with Newscrawl / FineWeb2 data}",
+        r"\mbox{– Newscrawl / FineWeb2}",
     ),
-    "back_translation": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2", r"\mbox{LR$\rightarrow$HR augmentation}"),
-    "dict_prompting": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2", r"\mbox{LR$\rightarrow$HR augmentation with dictionary prompting}"),
+    "back_translation": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2", r"\mbox{Low-to-High synthetization}"),
+    "dict_prompting": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2", r"\mbox{Low-to-High synthetization with Dictionary prompting}"),
 }
 
 # System order for grid layout (2 columns)

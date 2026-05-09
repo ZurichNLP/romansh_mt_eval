@@ -19,7 +19,7 @@ SYSTEM_LATEX_NAMES = {
     "reference": "Human reference",
     "Gemini-3-Pro": "Gemini 3 Pro (preview)",
     "romansh-nllb-1.3b": "LR$\\rightarrow$HR augmentation",
-    "romansh-nllb-1.3b-dict-prompting": "+ dictionary prompting",
+    "romansh-nllb-1.3b-dict-prompting": "+ Dictionary prompting",
 }
 
 # Variety codes to full display names
@@ -36,7 +36,7 @@ TEMPLATE = r"""
 \footnotesize
 \begin{tabularx}{\columnwidth}{@{}Xrrrr@{}}
 \toprule
-Variety & Human reference & Gemini 3 Pro (preview) & LR$\rightarrow$HR augmentation & + dictionary prompting \\
+Variety & Human reference & Gemini 3 Pro (preview) & LR$\rightarrow$HR augmentation & + Dictionary prompting \\
 \midrule
 {variety_rows}
 \bottomrule
