@@ -27,6 +27,8 @@ WMT_VARIETY_ORDER = [
     "rm-vallader",
 ]
 
+WMT_AND_BOUQUET_METRIC_COLUMN_COUNT = len(WMT_VARIETY_ORDER) + 2
+
 SYSTEMS_GEMINI: list[tuple[str, str]] = [
     ("gemini_25_flash", r"\mbox{Gemini 2.5 Flash}"),
     ("gemini_3_flash", r"\mbox{Gemini 3 Flash (preview)}"),
@@ -424,28 +426,48 @@ def _numeric_metric(score: float | str | None) -> float | None:
     return None
 
 
-def _metric_rounded_like_display(value: float) -> float:
+def _average_over_wmt_varieties_and_bouquet(
+    wmt_scores_by_variety: dict[str, float | None],
+    bouquet_score: float | str | None,
+) -> float | None:
+    values: list[float] = []
+    for variety in WMT_VARIETY_ORDER:
+        numeric = _numeric_metric(wmt_scores_by_variety.get(variety))
+        if numeric is None:
+            return None
+        values.append(numeric)
+    bouquet_numeric = _numeric_metric(bouquet_score)
+    if bouquet_numeric is None:
+        return None
+    values.append(bouquet_numeric)
+    return sum(values) / len(values)
+
+
+def _metric_rounded_display_string(numeric: float) -> str:
     decimals = DISPLAY_METRIC_DECIMAL_PLACES
-    return float(f"{value:.{decimals}f}")
+    return f"{numeric:.{decimals}f}"
 
 
 def _winning_system_keys_for_column(
     system_keys: Iterable[str],
     getter: Callable[[str], float | None],
 ) -> set[str]:
-    rounded_by_system_key: dict[str, float] = {}
+    rounded_display_by_system_key: dict[str, str] = {}
     for system_key in system_keys:
         numeric = getter(system_key)
         if numeric is None:
             continue
-        rounded_by_system_key[system_key] = _metric_rounded_like_display(numeric)
-    if not rounded_by_system_key:
+        rounded_display_by_system_key[system_key] = _metric_rounded_display_string(numeric)
+    if not rounded_display_by_system_key:
         return set()
-    best_rounded = max(rounded_by_system_key.values())
+    best_display = max(
+        rounded_display_by_system_key.values(),
+        key=lambda display_text: float(display_text),
+    )
     return {
         system_key
-        for system_key, rounded_value in rounded_by_system_key.items()
-        if rounded_value == best_rounded
+        for system_key, display_text in rounded_display_by_system_key.items()
+        if display_text == best_display
     }
 
 
@@ -465,10 +487,19 @@ def _de_to_rm_bleu_for_column_index(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
 ) -> float | None:
-    if column_index < len(WMT_VARIETY_ORDER):
+    bouquet_column_index = len(WMT_VARIETY_ORDER)
+    average_column_index = bouquet_column_index + 1
+    if column_index < bouquet_column_index:
         variety = WMT_VARIETY_ORDER[column_index]
         return _numeric_metric(wmt_scores[system_key]["de_to_rm_bleu"][variety])
-    return _numeric_metric(bouquet_scores[system_key]["de_to_rm_bleu"])
+    if column_index == bouquet_column_index:
+        return _numeric_metric(bouquet_scores[system_key]["de_to_rm_bleu"])
+    if column_index == average_column_index:
+        return _average_over_wmt_varieties_and_bouquet(
+            wmt_scores[system_key]["de_to_rm_bleu"],
+            bouquet_scores[system_key]["de_to_rm_bleu"],
+        )
+    raise ValueError(f"Invalid column_index for de→RM BLEU: {column_index}")
 
 
 def _rm_to_de_bleu_for_column_index(
@@ -477,10 +508,19 @@ def _rm_to_de_bleu_for_column_index(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
 ) -> float | None:
-    if column_index < len(WMT_VARIETY_ORDER):
+    bouquet_column_index = len(WMT_VARIETY_ORDER)
+    average_column_index = bouquet_column_index + 1
+    if column_index < bouquet_column_index:
         variety = WMT_VARIETY_ORDER[column_index]
         return _numeric_metric(wmt_scores[system_key]["rm_to_de_bleu"][variety])
-    return _numeric_metric(bouquet_scores[system_key]["rm_to_de_bleu"])
+    if column_index == bouquet_column_index:
+        return _numeric_metric(bouquet_scores[system_key]["rm_to_de_bleu"])
+    if column_index == average_column_index:
+        return _average_over_wmt_varieties_and_bouquet(
+            wmt_scores[system_key]["rm_to_de_bleu"],
+            bouquet_scores[system_key]["rm_to_de_bleu"],
+        )
+    raise ValueError(f"Invalid column_index for RM→DE BLEU: {column_index}")
 
 
 def _rm_to_de_comet_for_column_index(
@@ -489,17 +529,26 @@ def _rm_to_de_comet_for_column_index(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
 ) -> float | None:
-    if column_index < len(WMT_VARIETY_ORDER):
+    bouquet_column_index = len(WMT_VARIETY_ORDER)
+    average_column_index = bouquet_column_index + 1
+    if column_index < bouquet_column_index:
         variety = WMT_VARIETY_ORDER[column_index]
         return _numeric_metric(wmt_scores[system_key]["rm_to_de_comet"][variety])
-    return _numeric_metric(bouquet_scores[system_key]["rm_to_de_comet"])
+    if column_index == bouquet_column_index:
+        return _numeric_metric(bouquet_scores[system_key]["rm_to_de_comet"])
+    if column_index == average_column_index:
+        return _average_over_wmt_varieties_and_bouquet(
+            wmt_scores[system_key]["rm_to_de_comet"],
+            bouquet_scores[system_key]["rm_to_de_comet"],
+        )
+    raise ValueError(f"Invalid column_index for RM→DE COMET: {column_index}")
 
 
 def compute_de_to_rm_column_highlights(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
 ) -> tuple[list[set[str]], list[set[str]]]:
-    column_count = len(WMT_VARIETY_ORDER) + 1
+    column_count = WMT_AND_BOUQUET_METRIC_COLUMN_COUNT
     overall_best_per_column: list[set[str]] = []
     nllb_best_per_column: list[set[str]] = []
     for column_index in range(column_count):
@@ -525,7 +574,7 @@ def compute_rm_to_de_column_highlights(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
 ) -> tuple[list[set[str]], list[set[str]], list[set[str]], list[set[str]]]:
-    column_count = len(WMT_VARIETY_ORDER) + 1
+    column_count = WMT_AND_BOUQUET_METRIC_COLUMN_COUNT
     overall_best_bleu: list[set[str]] = []
     overall_best_comet: list[set[str]] = []
     nllb_best_bleu: list[set[str]] = []
@@ -565,40 +614,29 @@ def compute_rm_to_de_column_highlights(
 
 def format_de_to_rm_cell(
     bleu: float | str | None,
-    phantom_comet: float | str | None,
     *,
     bold_bleu: bool = False,
     underline_bleu: bool = False,
 ) -> str:
     bleu_text = format_score(bleu)
-    wrapped_bleu = _wrap_metric_for_latex(
+    return _wrap_metric_for_latex(
         bleu_text,
         bold=bold_bleu,
         underline=underline_bleu,
     )
-    return rf"\phantom{{ / {format_score(phantom_comet)}}}{wrapped_bleu}"
 
 
-def format_rm_to_de_cell(
-    bleu: float | str | None,
-    comet: float | str | None,
+def format_single_metric_cell(
+    value: float | str | None,
     *,
-    bold_bleu: bool = False,
-    underline_bleu: bool = False,
-    bold_comet: bool = False,
-    underline_comet: bool = False,
+    bold: bool = False,
+    underline: bool = False,
 ) -> str:
-    bleu_text = _wrap_metric_for_latex(
-        format_score(bleu),
-        bold=bold_bleu,
-        underline=underline_bleu,
+    return _wrap_metric_for_latex(
+        format_score(value),
+        bold=bold,
+        underline=underline,
     )
-    comet_text = _wrap_metric_for_latex(
-        format_score(comet),
-        bold=bold_comet,
-        underline=underline_comet,
-    )
-    return f"{bleu_text} / {comet_text}"
 
 
 def de_to_rm_data_row_line(
@@ -616,7 +654,6 @@ def de_to_rm_data_row_line(
         cells.append(
             format_de_to_rm_cell(
                 wmt_scores[system_key]["de_to_rm_bleu"][variety],
-                wmt_scores[system_key]["rm_to_de_comet"][variety],
                 bold_bleu=system_key in overall_best_bleu_per_column[column_index],
                 underline_bleu=system_key in nllb_best_bleu_per_column[column_index],
             )
@@ -625,47 +662,80 @@ def de_to_rm_data_row_line(
     cells.append(
         format_de_to_rm_cell(
             bouquet_scores[system_key]["de_to_rm_bleu"],
-            bouquet_scores[system_key]["rm_to_de_comet"],
             bold_bleu=system_key in overall_best_bleu_per_column[bouquet_column_index],
             underline_bleu=system_key in nllb_best_bleu_per_column[bouquet_column_index],
+        )
+    )
+    average_column_index = bouquet_column_index + 1
+    average_bleu = _average_over_wmt_varieties_and_bouquet(
+        wmt_scores[system_key]["de_to_rm_bleu"],
+        bouquet_scores[system_key]["de_to_rm_bleu"],
+    )
+    cells.append(
+        format_de_to_rm_cell(
+            average_bleu,
+            bold_bleu=system_key in overall_best_bleu_per_column[average_column_index],
+            underline_bleu=system_key in nllb_best_bleu_per_column[average_column_index],
         )
     )
     return display_name + " & " + " & ".join(cells) + line_suffix
 
 
-def rm_to_de_data_row_line(
+DATA_COLUMNS_EMPTY_SPACER = r" & & & & & & & &"
+
+TABLE_TABULAR_SPEC = (
+    r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrcr@{}}"
+)
+TABLE_HEADER_ROW1 = (
+    r"\mbox{\textbf{System}} & \multicolumn{6}{c}{\textbf{WMT24++}} & "
+    r"\textbf{BOUQuET} & \multirow{2}{*}{\textbf{Avg.}} \\"
+)
+TABLE_HEADER_ROW2 = (
+    r" & \textbf{RG} & \textbf{Sursilvan} & \textbf{Sutsilvan} & \textbf{Surmiran} & "
+    r"\textbf{Puter} & \textbf{Vallader} & \textbf{RG} \\"
+)
+NLLB_AFTER_SUBGROUP_SKIP = r" \\[0.45em]"
+NLLB_AFTER_SECTION_TITLE_ROW_SKIP = r" \\[0.32em]"
+NLLB_AFTER_FINE_TUNED_HEADER_SKIP = r" \\[0.35em]"
+
+
+def rm_to_de_single_metric_data_row_line(
     display_name: str,
     system_key: str,
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
+    metric_key: str,
     line_suffix: str,
-    *,
-    overall_best_bleu_per_column: list[set[str]],
-    overall_best_comet_per_column: list[set[str]],
-    nllb_best_bleu_per_column: list[set[str]],
-    nllb_best_comet_per_column: list[set[str]],
+    overall_best_per_column: list[set[str]],
+    nllb_best_per_column: list[set[str]],
 ) -> str:
     cells: list[str] = []
     for column_index, variety in enumerate(WMT_VARIETY_ORDER):
         cells.append(
-            format_rm_to_de_cell(
-                wmt_scores[system_key]["rm_to_de_bleu"][variety],
-                wmt_scores[system_key]["rm_to_de_comet"][variety],
-                bold_bleu=system_key in overall_best_bleu_per_column[column_index],
-                underline_bleu=system_key in nllb_best_bleu_per_column[column_index],
-                bold_comet=system_key in overall_best_comet_per_column[column_index],
-                underline_comet=system_key in nllb_best_comet_per_column[column_index],
+            format_single_metric_cell(
+                wmt_scores[system_key][metric_key][variety],
+                bold=system_key in overall_best_per_column[column_index],
+                underline=system_key in nllb_best_per_column[column_index],
             )
         )
     bouquet_column_index = len(WMT_VARIETY_ORDER)
     cells.append(
-        format_rm_to_de_cell(
-            bouquet_scores[system_key]["rm_to_de_bleu"],
-            bouquet_scores[system_key]["rm_to_de_comet"],
-            bold_bleu=system_key in overall_best_bleu_per_column[bouquet_column_index],
-            underline_bleu=system_key in nllb_best_bleu_per_column[bouquet_column_index],
-            bold_comet=system_key in overall_best_comet_per_column[bouquet_column_index],
-            underline_comet=system_key in nllb_best_comet_per_column[bouquet_column_index],
+        format_single_metric_cell(
+            bouquet_scores[system_key][metric_key],
+            bold=system_key in overall_best_per_column[bouquet_column_index],
+            underline=system_key in nllb_best_per_column[bouquet_column_index],
+        )
+    )
+    average_column_index = bouquet_column_index + 1
+    average_value = _average_over_wmt_varieties_and_bouquet(
+        wmt_scores[system_key][metric_key],
+        bouquet_scores[system_key][metric_key],
+    )
+    cells.append(
+        format_single_metric_cell(
+            average_value,
+            bold=system_key in overall_best_per_column[average_column_index],
+            underline=system_key in nllb_best_per_column[average_column_index],
         )
     )
     return display_name + " & " + " & ".join(cells) + line_suffix
@@ -681,11 +751,11 @@ def build_de_to_rm_table(
     lines = [
         "",
         r"{\footnotesize",
-        r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}",
+        TABLE_TABULAR_SPEC,
         r"\toprule",
-        r"\mbox{\textbf{System}} & \multicolumn{6}{c}{\textbf{WMT24++}} & \textbf{BOUQuET} \\",
-        r"\cmidrule(lr){2-7} \cmidrule(lr){8-8}",
-        r" & \textbf{RG} & \textbf{Sursilvan} & \textbf{Sutsilvan} & \textbf{Surmiran} & \textbf{Puter} & \textbf{Vallader} & \textbf{RG} \\",
+        TABLE_HEADER_ROW1,
+        r"\cmidrule(lr){2-7} \cmidrule(lr){8-8} \cmidrule(lr){9-9}",
+        TABLE_HEADER_ROW2,
         r"\midrule",
     ]
 
@@ -704,7 +774,9 @@ def build_de_to_rm_table(
 
     lines.extend([
         r"\midrule",
-        r"\mbox{\textit{Fine-tuned NLLB}} & & & & & & & \\[0.2em]",
+        r"\mbox{\textit{Fine-tuned NLLB}}"
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_FINE_TUNED_HEADER_SKIP,
     ])
 
     no_data_key, no_data_display = NO_DATA_AUG_SYSTEM
@@ -714,17 +786,21 @@ def build_de_to_rm_table(
             no_data_key,
             wmt_scores,
             bouquet_scores,
-            r" \\[0.2em]",
+            NLLB_AFTER_SUBGROUP_SKIP,
             overall_best_bleu_per_column=overall_best_bleu,
             nllb_best_bleu_per_column=nllb_best_bleu,
         )
     )
 
-    lines.append(FORWARD_TRANSLATION_HEADER + r" & & & & & & & \\")
+    lines.append(
+        FORWARD_TRANSLATION_HEADER
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_SECTION_TITLE_ROW_SKIP
+    )
 
     for forward_index, (system_key, display_name) in enumerate(FORWARD_TRANSLATION_ROWS):
         forward_suffix = (
-            r" \\[0.2em]"
+            NLLB_AFTER_SUBGROUP_SKIP
             if forward_index == len(FORWARD_TRANSLATION_ROWS) - 1
             else r" \\"
         )
@@ -740,7 +816,11 @@ def build_de_to_rm_table(
             )
         )
 
-    lines.append(LR_TO_HR_AUGMENTATION_HEADER + r" & & & & & & & \\")
+    lines.append(
+        LR_TO_HR_AUGMENTATION_HEADER
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_SECTION_TITLE_ROW_SKIP
+    )
 
     for system_key, display_name in LR_TO_HR_AUGMENTATION_ROWS:
         lines.append(
@@ -763,99 +843,215 @@ def build_de_to_rm_table(
     return "\n".join(lines) + "\n"
 
 
-def build_rm_to_de_table(
+def build_rm_to_de_bleu_table(
     wmt_scores: dict[str, dict[str, dict[str, float | None]]],
     bouquet_scores: dict[str, dict[str, float | str]],
 ) -> str:
     (
         overall_best_bleu,
-        overall_best_comet,
+        _overall_best_comet,
         nllb_best_bleu,
+        _nllb_best_comet,
+    ) = compute_rm_to_de_column_highlights(wmt_scores, bouquet_scores)
+
+    lines = [
+        "",
+        r"{\footnotesize",
+        TABLE_TABULAR_SPEC,
+        r"\toprule",
+        TABLE_HEADER_ROW1,
+        r"\cmidrule(lr){2-7} \cmidrule(lr){8-8} \cmidrule(lr){9-9}",
+        TABLE_HEADER_ROW2,
+        r"\midrule",
+    ]
+
+    for system_key, display_name in SYSTEMS_GEMINI:
+        lines.append(
+            rm_to_de_single_metric_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                "rm_to_de_bleu",
+                r" \\",
+                overall_best_bleu,
+                nllb_best_bleu,
+            )
+        )
+
+    lines.extend([
+        r"\midrule",
+        r"\mbox{\textit{Fine-tuned NLLB}}"
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_FINE_TUNED_HEADER_SKIP,
+    ])
+
+    no_data_key, no_data_display = NO_DATA_AUG_SYSTEM
+    lines.append(
+        rm_to_de_single_metric_data_row_line(
+            no_data_display,
+            no_data_key,
+            wmt_scores,
+            bouquet_scores,
+            "rm_to_de_bleu",
+            NLLB_AFTER_SUBGROUP_SKIP,
+            overall_best_bleu,
+            nllb_best_bleu,
+        )
+    )
+
+    lines.append(
+        FORWARD_TRANSLATION_HEADER
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_SECTION_TITLE_ROW_SKIP
+    )
+
+    for forward_index, (system_key, display_name) in enumerate(FORWARD_TRANSLATION_ROWS):
+        forward_suffix = (
+            NLLB_AFTER_SUBGROUP_SKIP
+            if forward_index == len(FORWARD_TRANSLATION_ROWS) - 1
+            else r" \\"
+        )
+        lines.append(
+            rm_to_de_single_metric_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                "rm_to_de_bleu",
+                forward_suffix,
+                overall_best_bleu,
+                nllb_best_bleu,
+            )
+        )
+
+    lines.append(
+        LR_TO_HR_AUGMENTATION_HEADER
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_SECTION_TITLE_ROW_SKIP
+    )
+
+    for system_key, display_name in LR_TO_HR_AUGMENTATION_ROWS:
+        lines.append(
+            rm_to_de_single_metric_data_row_line(
+                display_name,
+                system_key,
+                wmt_scores,
+                bouquet_scores,
+                "rm_to_de_bleu",
+                r" \\",
+                overall_best_bleu,
+                nllb_best_bleu,
+            )
+        )
+
+    lines.extend([
+        r"\bottomrule",
+        r"\end{tabular*}",
+        r"}",
+    ])
+    return "\n".join(lines) + "\n"
+
+
+def build_rm_to_de_comet_table(
+    wmt_scores: dict[str, dict[str, dict[str, float | None]]],
+    bouquet_scores: dict[str, dict[str, float | str]],
+) -> str:
+    (
+        _overall_best_bleu,
+        overall_best_comet,
+        _nllb_best_bleu,
         nllb_best_comet,
     ) = compute_rm_to_de_column_highlights(wmt_scores, bouquet_scores)
 
     lines = [
         "",
         r"{\footnotesize",
-        r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}",
+        TABLE_TABULAR_SPEC,
         r"\toprule",
-        r"\mbox{\textbf{System}} & \multicolumn{6}{c}{\textbf{WMT24++}} & \textbf{BOUQuET} \\",
-        r"\cmidrule(lr){2-7} \cmidrule(lr){8-8}",
-        r" & \textbf{RG} & \textbf{Sursilvan} & \textbf{Sutsilvan} & \textbf{Surmiran} & \textbf{Puter} & \textbf{Vallader} & \textbf{RG} \\",
+        TABLE_HEADER_ROW1,
+        r"\cmidrule(lr){2-7} \cmidrule(lr){8-8} \cmidrule(lr){9-9}",
+        TABLE_HEADER_ROW2,
         r"\midrule",
     ]
 
     for system_key, display_name in SYSTEMS_GEMINI:
         lines.append(
-            rm_to_de_data_row_line(
+            rm_to_de_single_metric_data_row_line(
                 display_name,
                 system_key,
                 wmt_scores,
                 bouquet_scores,
+                "rm_to_de_comet",
                 r" \\",
-                overall_best_bleu_per_column=overall_best_bleu,
-                overall_best_comet_per_column=overall_best_comet,
-                nllb_best_bleu_per_column=nllb_best_bleu,
-                nllb_best_comet_per_column=nllb_best_comet,
+                overall_best_comet,
+                nllb_best_comet,
             )
         )
 
     lines.extend([
         r"\midrule",
-        r"\mbox{\textit{Fine-tuned NLLB}} & & & & & & & \\[0.2em]",
+        r"\mbox{\textit{Fine-tuned NLLB}}"
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_FINE_TUNED_HEADER_SKIP,
     ])
 
     no_data_key, no_data_display = NO_DATA_AUG_SYSTEM
     lines.append(
-        rm_to_de_data_row_line(
+        rm_to_de_single_metric_data_row_line(
             no_data_display,
             no_data_key,
             wmt_scores,
             bouquet_scores,
-            r" \\[0.2em]",
-            overall_best_bleu_per_column=overall_best_bleu,
-            overall_best_comet_per_column=overall_best_comet,
-            nllb_best_bleu_per_column=nllb_best_bleu,
-            nllb_best_comet_per_column=nllb_best_comet,
+            "rm_to_de_comet",
+            NLLB_AFTER_SUBGROUP_SKIP,
+            overall_best_comet,
+            nllb_best_comet,
         )
     )
 
-    lines.append(FORWARD_TRANSLATION_HEADER + r" & & & & & & & \\")
+    lines.append(
+        FORWARD_TRANSLATION_HEADER
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_SECTION_TITLE_ROW_SKIP
+    )
 
     for forward_index, (system_key, display_name) in enumerate(FORWARD_TRANSLATION_ROWS):
         forward_suffix = (
-            r" \\[0.2em]"
+            NLLB_AFTER_SUBGROUP_SKIP
             if forward_index == len(FORWARD_TRANSLATION_ROWS) - 1
             else r" \\"
         )
         lines.append(
-            rm_to_de_data_row_line(
+            rm_to_de_single_metric_data_row_line(
                 display_name,
                 system_key,
                 wmt_scores,
                 bouquet_scores,
+                "rm_to_de_comet",
                 forward_suffix,
-                overall_best_bleu_per_column=overall_best_bleu,
-                overall_best_comet_per_column=overall_best_comet,
-                nllb_best_bleu_per_column=nllb_best_bleu,
-                nllb_best_comet_per_column=nllb_best_comet,
+                overall_best_comet,
+                nllb_best_comet,
             )
         )
 
-    lines.append(LR_TO_HR_AUGMENTATION_HEADER + r" & & & & & & & \\")
+    lines.append(
+        LR_TO_HR_AUGMENTATION_HEADER
+        + DATA_COLUMNS_EMPTY_SPACER
+        + NLLB_AFTER_SECTION_TITLE_ROW_SKIP
+    )
 
     for system_key, display_name in LR_TO_HR_AUGMENTATION_ROWS:
         lines.append(
-            rm_to_de_data_row_line(
+            rm_to_de_single_metric_data_row_line(
                 display_name,
                 system_key,
                 wmt_scores,
                 bouquet_scores,
+                "rm_to_de_comet",
                 r" \\",
-                overall_best_bleu_per_column=overall_best_bleu,
-                overall_best_comet_per_column=overall_best_comet,
-                nllb_best_bleu_per_column=nllb_best_bleu,
-                nllb_best_comet_per_column=nllb_best_comet,
+                overall_best_comet,
+                nllb_best_comet,
             )
         )
 
@@ -911,15 +1107,19 @@ def main() -> None:
     )
 
     de_to_rm_table = build_de_to_rm_table(wmt_scores, bouquet_scores)
-    rm_to_de_table = build_rm_to_de_table(wmt_scores, bouquet_scores)
+    rm_to_de_bleu_table = build_rm_to_de_bleu_table(wmt_scores, bouquet_scores)
+    rm_to_de_comet_table = build_rm_to_de_comet_table(wmt_scores, bouquet_scores)
 
     print("\nde_to_rm_bleu table:")
     print(de_to_rm_table)
-    print("\nrm_to_de_bleu_comet table:")
-    print(rm_to_de_table)
+    print("\nrm_to_de_bleu table:")
+    print(rm_to_de_bleu_table)
+    print("\nrm_to_de_comet table:")
+    print(rm_to_de_comet_table)
 
     write_output_file("results_detailed_automatic_de_to_rm_bleu.tex", de_to_rm_table)
-    write_output_file("results_detailed_automatic_rm_to_de_bleu_comet.tex", rm_to_de_table)
+    write_output_file("results_detailed_automatic_rm_to_de_bleu.tex", rm_to_de_bleu_table)
+    write_output_file("results_detailed_automatic_rm_to_de_comet.tex", rm_to_de_comet_table)
 
 
 if __name__ == "__main__":
