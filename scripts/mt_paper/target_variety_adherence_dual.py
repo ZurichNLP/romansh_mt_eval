@@ -1,6 +1,9 @@
 import json
+import os
 from copy import deepcopy
 from pathlib import Path
+
+import dotenv
 
 from romansh_mt_eval.benchmarking.constants import VARIETIES
 from romansh_mt_eval.benchmarking.evaluation import RomanshWMT24Evaluation
@@ -169,21 +172,24 @@ print(output_model1)
 print("\nModel 2 output:")
 print(output_model2)
 
-# Save to paper project
-paper_include_dir = script_dir.parent.parent.parent / "rm-mt-paper" / "include"
+dotenv.load_dotenv()
+paper_directory = os.getenv("PAPER_DIR")
+if paper_directory is not None:
+    paper_include_dir = Path(paper_directory) / "include"
+    if paper_include_dir.exists():
+        output_path_1 = paper_include_dir / f"llm_confusion_matrix_{MODEL_KEY_1}.tex"
+        output_path_2 = paper_include_dir / f"llm_confusion_matrix_{MODEL_KEY_2}.tex"
 
-if paper_include_dir.exists():
-    output_path_1 = paper_include_dir / f"llm_confusion_matrix_{MODEL_KEY_1}.tex"
-    output_path_2 = paper_include_dir / f"llm_confusion_matrix_{MODEL_KEY_2}.tex"
-    
-    with output_path_1.open("w", encoding="utf-8") as f:
-        f.write(output_model1)
-    
-    with output_path_2.open("w", encoding="utf-8") as f:
-        f.write(output_model2)
-    
-    print(f"\nSaved to:")
-    print(f"  {output_path_1}")
-    print(f"  {output_path_2}")
+        with output_path_1.open("w", encoding="utf-8") as output_file:
+            output_file.write(output_model1)
+
+        with output_path_2.open("w", encoding="utf-8") as output_file:
+            output_file.write(output_model2)
+
+        print("\nSaved to:")
+        print(f"  {output_path_1}")
+        print(f"  {output_path_2}")
+    else:
+        print(f"\nWarning: Output directory does not exist: {paper_include_dir}")
 else:
-    print(f"\nWarning: Paper include directory not found at {paper_include_dir}")
+    print("\nWarning: PAPER_DIR environment variable not set")

@@ -340,6 +340,66 @@ def _build_latex_table(
 """
 
 
+def _mean_of_metric(metrics_by_variety: dict[str, dict], metric_key: str) -> float | None:
+    """Unweighted mean over varieties with sufficient overlap."""
+    values = [
+        metrics[metric_key]
+        for metrics in metrics_by_variety.values()
+        if metrics.get("pearson") is not None and metrics.get(metric_key) is not None
+    ]
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def _build_averaged_latex_table(
+    fluency_by_variety: dict[str, dict],
+    document_accuracy_by_variety: dict[str, dict],
+    segment_accuracy_by_variety: dict[str, dict],
+) -> str:
+    """Average per-variety IAA metrics into the main-paper summary table."""
+    percent_format = {"as_percent_scale": True}
+    rows = [
+        (
+            "Item-level Pearson correlation between raters",
+            "pearson",
+        ),
+        (
+            "Item-level pairwise agreement rate between raters",
+            "polarity",
+        ),
+        (
+            "System-level Spearman correlation between raters",
+            "ranking",
+        ),
+    ]
+    table_rows = []
+    for label, metric_key in rows:
+        cells = [
+            label,
+            _format_for_latex(_mean_of_metric(fluency_by_variety, metric_key), **percent_format),
+            _format_for_latex(
+                _mean_of_metric(document_accuracy_by_variety, metric_key), **percent_format
+            ),
+            _format_for_latex(
+                _mean_of_metric(segment_accuracy_by_variety, metric_key), **percent_format
+            ),
+        ]
+        table_rows.append(" & ".join(cells) + " \\\\")
+    body = "\n".join(table_rows)
+    return rf"""
+\footnotesize
+\begin{{tabularx}}{{\textwidth}}{{@{{}}Xrrr@{{}}}}
+\toprule
+\textbf{{Metric}} & Fluency & Document accuracy & Segment accuracy \\
+\midrule
+{body}
+\bottomrule
+\end{{tabularx}}
+\normalsize
+"""
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     add_pairwise_dataset_cli_arguments(parser)
@@ -387,12 +447,20 @@ def main() -> None:
         overlapping_column_header="Number of overlapping segments",
     )
 
+    averaged_table = _build_averaged_latex_table(
+        fluency_by_variety,
+        accuracy_by_variety,
+        segment_accuracy_by_variety,
+    )
+
     print("\n=== Segment-level fluency ===")
     print(fluency_table)
     print("\n=== Document-level accuracy ===")
     print(accuracy_table)
     print("\n=== Segment-level accuracy ===")
     print(segment_accuracy_table)
+    print("\n=== Averaged across varieties ===")
+    print(averaged_table)
 
     dotenv.load_dotenv()
     paper_dir = os.getenv("PAPER_DIR")
@@ -408,9 +476,13 @@ def main() -> None:
         (output_dir / "results_extended_iaa_segment_accuracy.tex").write_text(
             segment_accuracy_table.strip(), encoding="utf-8"
         )
+        (output_dir / "results_iaa_averaged.tex").write_text(
+            averaged_table.strip(), encoding="utf-8"
+        )
         print(f"\nResults written to {output_dir}/results_extended_iaa_fluency.tex")
         print(f"Results written to {output_dir}/results_extended_iaa_accuracy.tex")
         print(f"Results written to {output_dir}/results_extended_iaa_segment_accuracy.tex")
+        print(f"Results written to {output_dir}/results_iaa_averaged.tex")
 
 
 if __name__ == "__main__":

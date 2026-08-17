@@ -77,15 +77,13 @@ WMT_SYSTEM_MAPPINGS: dict[str, str] = {
     "dict_prompting": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2",
 }
 
-BOUQUET_SYSTEM_MAPPINGS: dict[str, str | None] = {
-    "gemini_25_flash": "systems_bouquet/gemini-2-5-flash",
-    "gemini_3_pro": "systems_bouquet/gemini-3-pro-preview",
-    "gemini_37_flash": "systems_bouquet/gemini-3-7-flash",
-    "no_data_aug": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2",
-    "forward_translation_europarl": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
-    "forward_translation_newscrawl_fineweb2": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
-    "back_translation": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict_ct2",
-    "dict_prompting": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2",
+BOUQUET_SYSTEM_MAPPINGS: dict[str, str] = {
+    system_key: relative_path.replace(
+        "system_translations/mt_paper/second_half/",
+        "system_translations/mt_paper/bouquet/",
+        1,
+    )
+    for system_key, relative_path in WMT_SYSTEM_MAPPINGS.items()
 }
 
 
@@ -377,14 +375,6 @@ def evaluate_bouquet_systems(
 
     scores: dict[str, dict[str, float | str]] = {}
     for system_key, relative_path in BOUQUET_SYSTEM_MAPPINGS.items():
-        if relative_path is None:
-            scores[system_key] = {
-                "de_to_rm_bleu": "tba",
-                "rm_to_de_bleu": "tba",
-                "rm_to_de_comet": "tba",
-            }
-            continue
-
         system_directory = workspace_root / relative_path
         de_to_rm_path, rm_to_de_path = bouquet_system_output_paths(system_directory)
         if not system_directory.is_dir() or not de_to_rm_path.is_file() or not rm_to_de_path.is_file():
