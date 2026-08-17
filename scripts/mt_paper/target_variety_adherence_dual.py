@@ -10,7 +10,7 @@ from romansh_mt_eval.benchmarking.evaluation import RomanshWMT24Evaluation
 from romansh_mt_eval.benchmarking.system_translations import load_llm_translations
 
 METRIC = "bleu"
-MODEL_KEY_1 = "Gemini-3-Pro"
+MODEL_KEY_1 = "Gemini-2.5-Flash"
 MODEL_KEY_2 = "ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.withdict.dict_prompting_ct2"
 
 benchmark = RomanshWMT24Evaluation()
