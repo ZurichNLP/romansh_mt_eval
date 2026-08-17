@@ -2,7 +2,7 @@
 
 Code for the papers
 - ["Expanding the WMT24++ Benchmark with Rumantsch Grischun, Sursilvan, Sutsilvan, Surmiran, Puter, and Vallader"](https://aclanthology.org/2025.wmt-1.79/)
-- "Translation Asymmetry in LLMs as a Data Augmentation Factor: A Case Study for 6 Romansh Language Varieties"
+- ["Translation Asymmetry in LLMs as a Data Augmentation Factor: A Case Study for 6 Romansh Language Varieties"](https://arxiv.org/abs/2603.25489)
 
 The benchmark data are located at https://huggingface.co/datasets/ZurichNLP/wmt24pp-rm and the human quality ratings are located at https://huggingface.co/datasets/ZurichNLP/romansh-mt-evaluation – this repo contains the code to reproduce the experiments in the papers.
 
@@ -47,42 +47,43 @@ xCOMET-XL is queried via the existing API client where applicable; run ChrF-only
 ### Installation
 - `pip install -r requirements.txt`
 
+RM→DE COMET scores use xCOMET-XL via `COMET_API_URL` (see `benchmarking/comet_client.py`). Adapt the client to run the metric locally if needed. BLEU scores do not require COMET.
+
 ### Splitting WMT24++ into validation and test sets
 - `python -m scripts.mt_paper.split_wmt24pp_dataset`
 - This creates `benchmarking/wmt24pp_split.json`
 - The first half of documents per domain is used as the validation split, and the remaining half is used as the test split
 
-### Table 1 – Automatic evaluation results
-We queried xCOMET-XL via a custom API - adapt the code to run the metric locally if needed.
-
-`python -m scripts.mt_paper.results_automatic`
-
-### Table 2 – Human evaluation results
-`python human_evaluation/scripts/create_results_table.py`
-
-### Figure 2b – Target variety adherence
+### Figure 3 – Generative confusion matrices
 `python -m scripts.mt_paper.target_variety_adherence_dual`
 
-### Table 4 – Validation results for back-translation from Romansh
-We queried xCOMET-XL via a custom API - adapt the code to run the metric locally if needed.
+### Table 1 – Validation results
+`python -m scripts.mt_paper.results_validation`
 
-`python -m scripts.mt_paper.results_validation_backtranslation`
+### Table 2 – Human evaluation statistics
+`python human_evaluation/scripts/create_human_evaluation_aggregate_statistics_table.py`
 
-### Appendix L – Detailed automatic evaluation results
-We queried xCOMET-XL via a custom API - adapt the code to run the metric locally if needed.
+### Table 3 – Inter-rater agreement
+`python human_evaluation/scripts/create_extended_inter_annotator_agreement.py`
 
+### Tables 4–5 – Automatic evaluation
 `python -m scripts.mt_paper.results_detailed_automatic`
 
+### Figure 4 – Human evaluation
+`python human_evaluation/scripts/create_human_evaluation_summary_figure.py`
+
+### Appendix I – RM→DE BLEU
+Produced by `python -m scripts.mt_paper.results_detailed_automatic`
+
+### Appendix L – Generative confusion matrices
 `python -m scripts.mt_paper.target_variety_adherence_all_systems`
 
 ### Appendix M – Detailed human evaluation results
-
 `python human_evaluation/scripts/create_detailed_results_table.py`
 
 `python human_evaluation/scripts/pairwise_system_comparison.py`
 
 ### Appendix N – Human evaluation statistics
-
 `python human_evaluation/scripts/create_human_evaluation_statistics_table.py`
 
 `python human_evaluation/scripts/create_extended_inter_annotator_agreement.py`
@@ -133,6 +134,10 @@ python -m unittest discover -s romansh_mt_eval/tests
 python -m unittest discover -s romansh_mt_eval/human_evaluation/tests
 ```
 
+## AI use
+
+AI coding assistants were used to help write evaluation scripts in this repository.
+
 ## Citation
 
 ```bibtex
@@ -148,5 +153,15 @@ python -m unittest discover -s romansh_mt_eval/human_evaluation/tests
     url = "https://aclanthology.org/2025.wmt-1.79/",
     pages = "1028--1047",
     ISBN = "979-8-89176-341-8",
+}
+
+@misc{vamvas-etal-2026-translation-asymmetry,
+    title={Translation Asymmetry in {LLM}s as a Data Augmentation Factor: A Case Study for 6 {R}omansh Language Varieties},
+    author={Vamvas, Jannis and P{\'e}rez Prat, Ignacio and Heldstab, Angela and Fischer, Dominic P. and Ahmadi, Sina and Sennrich, Rico},
+    year={2026},
+    eprint={2603.25489},
+    archivePrefix={arXiv},
+    primaryClass={cs.CL},
+    url={https://arxiv.org/abs/2603.25489},
 }
 ```
