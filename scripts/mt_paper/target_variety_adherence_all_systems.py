@@ -23,8 +23,8 @@ METRIC = "bleu"
 # None path means show "tba" for all cells
 SYSTEM_MAPPINGS = {
     "gemini_25_flash": ("system_translations/mt_paper/second_half/Gemini-2.5-Flash", r"\mbox{Gemini 2.5 Flash}"),
-    "gemini_3_flash": ("system_translations/mt_paper/second_half/Gemini-3-Flash", r"\mbox{Gemini 3 Flash}"),
     "gemini_3_pro": ("system_translations/mt_paper/second_half/Gemini-3-Pro", r"\mbox{Gemini 3 Pro}"),
+    "gemini_37_flash": ("system_translations/mt_paper/second_half/Gemini-3.7-Flash", r"\mbox{Gemini 3.7 Flash}"),
     "no_data_aug": ("system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2", r"\mbox{No data augmentation}"),
     "forward_translation_europarl": (
         "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
@@ -40,8 +40,8 @@ SYSTEM_MAPPINGS = {
 
 # System order for grid layout (2 columns)
 SYSTEM_ORDER = [
-    ["gemini_25_flash", "gemini_3_flash"],
-    ["gemini_3_pro", "no_data_aug"],
+    ["gemini_25_flash", "gemini_3_pro"],
+    ["gemini_37_flash", "no_data_aug"],
     ["forward_translation_europarl", "forward_translation_newscrawl_fineweb2"],
     ["back_translation", "dict_prompting"],
 ]

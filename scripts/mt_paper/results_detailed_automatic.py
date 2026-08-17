@@ -31,8 +31,8 @@ WMT_AND_BOUQUET_METRIC_COLUMN_COUNT = len(WMT_VARIETY_ORDER) + 2
 
 SYSTEMS_GEMINI: list[tuple[str, str]] = [
     ("gemini_25_flash", r"\mbox{Gemini 2.5 Flash}"),
-    ("gemini_3_flash", r"\mbox{Gemini 3 Flash (preview)}"),
     ("gemini_3_pro", r"\mbox{Gemini 3 Pro (preview)}"),
+    ("gemini_37_flash", r"\mbox{Gemini 3.7 Flash}"),
 ]
 
 FORWARD_TRANSLATION_HEADER = r"\mbox{HR$\rightarrow$LR augmentation:}"
@@ -68,8 +68,8 @@ BOUQUET_VARIETY = "rm-rumgr"
 
 WMT_SYSTEM_MAPPINGS: dict[str, str] = {
     "gemini_25_flash": "system_translations/mt_paper/second_half/Gemini-2.5-Flash",
-    "gemini_3_flash": "system_translations/mt_paper/second_half/Gemini-3-Flash",
     "gemini_3_pro": "system_translations/mt_paper/second_half/Gemini-3-Pro",
+    "gemini_37_flash": "system_translations/mt_paper/second_half/Gemini-3.7-Flash",
     "no_data_aug": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2",
     "forward_translation_europarl": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
     "forward_translation_newscrawl_fineweb2": "system_translations/mt_paper/second_half/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
@@ -79,8 +79,8 @@ WMT_SYSTEM_MAPPINGS: dict[str, str] = {
 
 BOUQUET_SYSTEM_MAPPINGS: dict[str, str | None] = {
     "gemini_25_flash": "systems_bouquet/gemini-2-5-flash",
-    "gemini_3_flash": "systems_bouquet/gemini-3-flash-preview",
     "gemini_3_pro": "systems_bouquet/gemini-3-pro-preview",
+    "gemini_37_flash": "systems_bouquet/gemini-3-7-flash",
     "no_data_aug": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.noback.withdict_ct2",
     "forward_translation_europarl": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override.withdict_ct2",
     "forward_translation_newscrawl_fineweb2": "systems_bouquet/ctranslate2_fairseq_nllb-200-distilled-1.3B.norm.temp1.5.10e.forward_override_newscrawl_fineweb2.withdict_ct2",
